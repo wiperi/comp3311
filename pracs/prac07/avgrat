@@ -1,0 +1,70 @@
+#!/usr/bin/python3
+# COMP3311 Prac 08 ... Python and the Beers database
+# Print average ratings for tasters, brewers
+
+import sys
+import psycopg2
+
+### Helper functions (if any)
+
+### Globals
+
+db = None
+usage = f"Usage: {sys.argv[0]} taster|beer|brewer Name"
+
+### Command-line args
+
+if len(sys.argv) < 3:
+   print(usage)
+   exit(1)
+
+which = sys.argv[1]
+if which != "taster" and which != "beer" and which != "brewer":
+   print(usage)
+   exit(1)
+name = sys.argv[2]
+
+### Queries
+getTasterRatings = '''
+select avg(r.score)::numeric(3,1) as rating
+from   Ratings r join Taster t on r.taster = t.id
+where  t.given = %s
+'''
+getBeerRatings = '''
+select avg(r.score)::numeric(3,1) as rating
+from   Ratings r join Beer b on r.beer = b.id
+where  b.name = %s
+'''
+getBrewerRatings = '''
+select avg(r.score)::numeric(3,1) as rating
+from   Ratings r join Beer b on r.beer = b.id
+       join Brewer w on b.brewer = w.id
+where  w.name = %s
+'''
+
+### Manipulating database
+
+try:
+   db = psycopg2.connect(dbname="beers")
+   cur = db.cursor()
+
+   if which == "taster":
+      cur.execute(getTasterRatings, [name])
+   elif which == "beer":
+      cur.execute(getBeerRatings, [name])
+   else:
+      cur.execute(getBrewerRatings, [name])
+   res = cur.fetchone();
+   if not res:
+      print(f"No {which} called '{name}'")
+      exit(1)
+   if res[0] == None:
+      print(f"No ratings for {name}")
+      exit(1)
+   print(f"Average rating for {which} {name} is {res[0]}")
+
+except Exception as err:
+   print("DB error: ", err)
+finally:
+   if db:
+      db.close()
