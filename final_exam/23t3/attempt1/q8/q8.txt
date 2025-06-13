@@ -1,0 +1,16 @@
+# COMP3311 23T3 Final Exam
+# Q8: A product aggregate
+
+create or replace function mult(a integer, b integer) returns integer
+as
+$$
+select a * b;
+$$ language sql;
+
+create or replace aggregate product (integer)
+(
+  sfunc    = mult,
+  stype    = integer,
+  initcond = 1
+);
+

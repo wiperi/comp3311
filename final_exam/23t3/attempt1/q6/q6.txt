@@ -1,0 +1,46 @@
+# COMP3311 23T3 Final Exam
+# Q6: ER -> Relational Mapping
+
+(a) ER mapping
+
+create table R (
+	id integer primary key,
+	x  text
+);
+create table A (
+	R integer references R(id),
+	y  text,
+	primary key (R)
+);
+create table B (
+	R integer references R(id),
+	primary key (R)
+);
+create table C (
+	R integer references R(id),
+	primary key (R)
+);
+create table Cz (
+	C integer references C(R),
+	z text
+);
+
+-- cannot enforce disjoint subclasses
+-- cannot restrict R to one subclass
+-- cannot enforce total participation
+
+
+(b) Single-table mapping
+
+create table R (
+	id integer primary key,
+	is_a char(1) not null check (is_a in ('A','B','C')),
+	x text,
+	y text
+);
+create table Rz (
+	R integer references R(id),
+	z text
+);
+
+-- cannot enforce that Rz only references R tuples where R.is_a=='C'
