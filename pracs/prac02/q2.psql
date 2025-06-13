@@ -24,6 +24,7 @@ create table Employees (
 	hoursPweek  float
 	            constraint ValidHPW
 		    check (hoursPweek >= 0 and hoursPweek <= 168), --7*24
+    depart      char(3) references Departments
 	primary key (tfn)
 );
 
@@ -43,39 +44,17 @@ create table DeptMissions (
 	primary key (department,keyword)
 );
 
-create table WorksFor (
-	employee    char(11)
-		    constraint ValidEmployee references Employees(tfn),
-	department  char(3)
-		    constraint ValidDepartment references Departments(id),
-	percentage  float
-	            constraint ValidPercentage
-		    check (percentage >= 0.0 and percentage <= 100.0),
-	primary key (employee,department)
-);
 
+-- Use deferred constraints
+BEGIN;
 
-create or replace function check_percentage_func()
-    returns trigger as
-$$
-declare
-    total_percentage float;
-begin
-    select coalesce(sum(percentage), 0)
-    into total_percentage
-    from worksfor
-    where employee = new.employee;
+SET CONSTRAINTS ALL DEFERRED;
 
-    if (total_percentage - old.percentage + new.percentage) > 100 then
-        raise exception 'total percentage of same employee can not exceed 100%';
-    end if;
+-- Temporarily violates uniqueness but resolves by end
+insert into employees (tfn, givenName, familyName, hoursPweek, depart)
+values ('111-222-333-444', 'test', 'test', 24, '001');
 
-    return new;
-end;
-$$ language plpgsql;
+insert into departments (id, name, manager)
+values ('001', 'R&D', '111-222-333-444');
 
-create trigger checkPercentage
-    before insert or update
-    on worksfor
-    for each row
-execute function check_percentage_func();
+COMMIT;
